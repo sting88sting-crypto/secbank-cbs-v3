@@ -5,10 +5,12 @@ spring:
   application:
     name: secbank-cbs
   
-  # Database Configuration - Railway PostgreSQL uses DATABASE_URL
-  # 数据库配置 - Railway PostgreSQL 使用 DATABASE_URL
+  # Database Configuration - Railway PostgreSQL
+  # Railway provides DATABASE_URL without jdbc: prefix, so we use individual components
+  # 数据库配置 - Railway PostgreSQL
+  # Railway提供的DATABASE_URL没有jdbc:前缀，所以我们使用单独的组件
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/secbank_cbs}
+    url: jdbc:postgresql://${PGHOST:localhost}:${PGPORT:5432}/${PGDATABASE:secbank_cbs}
     username: ${PGUSER:postgres}
     password: ${PGPASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
