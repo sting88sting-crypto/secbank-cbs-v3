@@ -1,5 +1,5 @@
-# SecBank CBS V2 Frontend Dockerfile
-# SecBank CBS V2 前端 Dockerfile
+# SecBank CBS V2 Frontend Dockerfile for Railway
+# SecBank CBS V2 前端 Dockerfile (Railway版本)
 
 # Build stage / 构建阶段
 FROM node:22-alpine AS build
@@ -17,6 +17,13 @@ RUN pnpm install --frozen-lockfile
 # Copy source code / 复制源代码
 COPY . .
 
+# Build arguments for API URL / API URL构建参数
+ARG VITE_API_URL=/api/v1
+ARG VITE_USE_MOCK_API=false
+
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_USE_MOCK_API=$VITE_USE_MOCK_API
+
 # Build for production / 生产构建
 RUN pnpm run build
 
@@ -24,21 +31,30 @@ RUN pnpm run build
 FROM nginx:alpine
 WORKDIR /usr/share/nginx/html
 
+# Install envsubst for environment variable substitution
+RUN apk add --no-cache gettext
+
 # Remove default nginx static assets / 删除默认nginx静态资源
 RUN rm -rf ./*
 
 # Copy built assets from build stage / 从构建阶段复制构建产物
 COPY --from=build /app/dist .
 
-# Copy nginx configuration / 复制nginx配置
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy nginx configuration template / 复制nginx配置模板
+COPY nginx.conf /etc/nginx/templates/default.conf.template
+
+# Create startup script for environment variable substitution
+RUN echo '#!/bin/sh' > /docker-entrypoint.sh && \
+    echo 'envsubst "\$BACKEND_URL" < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf' >> /docker-entrypoint.sh && \
+    echo 'nginx -g "daemon off;"' >> /docker-entrypoint.sh && \
+    chmod +x /docker-entrypoint.sh
 
 # Expose port / 暴露端口
 EXPOSE 80
 
 # Health check / 健康检查
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:80 || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:80/health || exit 1
 
-# Run nginx / 运行nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Run with environment variable substitution / 运行并替换环境变量
+CMD ["/docker-entrypoint.sh"]

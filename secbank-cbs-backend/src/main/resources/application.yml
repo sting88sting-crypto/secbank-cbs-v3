@@ -1,24 +1,31 @@
 server:
-  port: 8080
+  port: ${PORT:8080}
 
 spring:
   application:
     name: secbank-cbs
   
+  # Database Configuration - Railway PostgreSQL uses DATABASE_URL
+  # 数据库配置 - Railway PostgreSQL 使用 DATABASE_URL
   datasource:
-    url: jdbc:postgresql://localhost:5432/secbank_cbs
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/secbank_cbs}
+    username: ${PGUSER:postgres}
+    password: ${PGPASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
   
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update
     show-sql: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
+    open-in-view: false
   
   jackson:
     serialization:
@@ -29,8 +36,8 @@ spring:
 app:
   jwt:
     secret: ${JWT_SECRET:SecBankCBSV2SecretKeyForJWTTokenGenerationMustBeAtLeast256BitsLong}
-    expiration-ms: 86400000      # 24 hours
-    refresh-expiration-ms: 604800000  # 7 days
+    expiration-ms: ${JWT_EXPIRATION:86400000}
+    refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION:604800000}
 
 # Logging Configuration
 logging:
@@ -40,6 +47,16 @@ logging:
     org.springframework.security: INFO
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Actuator for health checks
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
 
 # OpenAPI Configuration
 springdoc:
