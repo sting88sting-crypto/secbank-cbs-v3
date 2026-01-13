@@ -18,10 +18,12 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 
 # Build arguments for API URL / API URL构建参数
-ARG VITE_API_URL=/api/v1
+# Railway passes environment variables as build args
+ARG VITE_API_URL
 ARG VITE_USE_MOCK_API=false
 
-ENV VITE_API_URL=$VITE_API_URL
+# Set environment variables for build
+ENV VITE_API_URL=${VITE_API_URL:-https://secbank-cbs-v3-production.up.railway.app/api/v1}
 ENV VITE_USE_MOCK_API=$VITE_USE_MOCK_API
 
 # Build for production / 生产构建
@@ -31,23 +33,14 @@ RUN pnpm run build
 FROM nginx:alpine
 WORKDIR /usr/share/nginx/html
 
-# Install envsubst for environment variable substitution
-RUN apk add --no-cache gettext
-
 # Remove default nginx static assets / 删除默认nginx静态资源
 RUN rm -rf ./*
 
 # Copy built assets from build stage / 从构建阶段复制构建产物
 COPY --from=build /app/dist .
 
-# Copy nginx configuration template / 复制nginx配置模板
-COPY nginx.conf /etc/nginx/templates/default.conf.template
-
-# Create startup script for environment variable substitution
-RUN echo '#!/bin/sh' > /docker-entrypoint.sh && \
-    echo 'envsubst "\$BACKEND_URL" < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf' >> /docker-entrypoint.sh && \
-    echo 'nginx -g "daemon off;"' >> /docker-entrypoint.sh && \
-    chmod +x /docker-entrypoint.sh
+# Copy nginx configuration / 复制nginx配置
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Expose port / 暴露端口
 EXPOSE 80
@@ -56,5 +49,5 @@ EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:80/health || exit 1
 
-# Run with environment variable substitution / 运行并替换环境变量
-CMD ["/docker-entrypoint.sh"]
+# Run nginx / 运行nginx
+CMD ["nginx", "-g", "daemon off;"]
