@@ -85,4 +85,10 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
      */
     @Query("SELECT DISTINCT a.module FROM AuditLog a ORDER BY a.module")
     List<String> findAllModules();
+
+    /**
+     * Count audit logs within date range.
+     * 统计指定日期范围内的审计日志数量
+     */
+    long countByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
 }

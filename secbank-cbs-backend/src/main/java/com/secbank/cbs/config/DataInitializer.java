@@ -42,11 +42,11 @@ public class DataInitializer implements CommandLineRunner {
         // Create default branch if not exists
         Branch headquarters = createDefaultBranch();
         
-        // Create default permissions
+        // Create default permissions (always runs to ensure all permissions exist)
         Set<Permission> allPermissions = createDefaultPermissions();
         
-        // Create default roles
-        Role adminRole = createAdminRole(allPermissions);
+        // Create or update admin role with ALL permissions
+        Role adminRole = createOrUpdateAdminRole(allPermissions);
         
         // Create default admin user
         createAdminUser(adminRole, headquarters);
@@ -105,6 +105,9 @@ public class DataInitializer implements CommandLineRunner {
         permissions.add(createPermissionIfNotExists("SETTINGS_VIEW", "View Settings", "查看设置", "SYSTEM_SETTINGS"));
         permissions.add(createPermissionIfNotExists("SETTINGS_UPDATE", "Update Settings", "更新设置", "SYSTEM_SETTINGS"));
         
+        // Dashboard Permissions
+        permissions.add(createPermissionIfNotExists("DASHBOARD_VIEW", "View Dashboard", "查看仪表板", "DASHBOARD"));
+        
         return permissions;
     }
 
@@ -122,8 +125,16 @@ public class DataInitializer implements CommandLineRunner {
         });
     }
 
-    private Role createAdminRole(Set<Permission> permissions) {
-        return roleRepository.findByRoleCode("ADMIN").orElseGet(() -> {
+    private Role createOrUpdateAdminRole(Set<Permission> permissions) {
+        Role existingRole = roleRepository.findByRoleCode("ADMIN").orElse(null);
+        
+        if (existingRole != null) {
+            // Update existing role with all permissions
+            log.info("Updating admin role with all permissions... / 更新管理员角色的所有权限...");
+            existingRole.setPermissions(permissions);
+            return roleRepository.save(existingRole);
+        } else {
+            // Create new admin role
             log.info("Creating admin role... / 创建管理员角色...");
             Role role = Role.builder()
                 .roleCode("ADMIN")
@@ -136,7 +147,7 @@ public class DataInitializer implements CommandLineRunner {
                 .permissions(permissions)
                 .build();
             return roleRepository.save(role);
-        });
+        }
     }
 
     private void createAdminUser(Role adminRole, Branch branch) {
