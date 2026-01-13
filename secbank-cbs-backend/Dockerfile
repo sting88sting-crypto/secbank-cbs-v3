@@ -17,6 +17,9 @@ RUN mvn clean package -DskipTests -B
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
+# Install curl for health checks / 安装curl用于健康检查
+RUN apk add --no-cache curl
+
 # Create non-root user / 创建非root用户
 RUN addgroup -S spring && adduser -S spring -G spring
 
@@ -30,9 +33,9 @@ USER spring
 # Expose port / 暴露端口
 EXPOSE 8080
 
-# Health check / 健康检查
-HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
+# Health check with longer start period for Spring Boot / Spring Boot需要更长的启动时间
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=5 \
+  CMD curl -f http://localhost:8080/actuator/health || exit 1
 
-# Run application / 运行应用
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Run application with optimized JVM settings / 使用优化的JVM设置运行应用
+ENTRYPOINT ["java", "-Xms256m", "-Xmx512m", "-jar", "app.jar"]
