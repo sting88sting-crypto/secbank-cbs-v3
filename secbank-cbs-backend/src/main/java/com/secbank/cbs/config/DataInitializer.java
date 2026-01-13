@@ -99,7 +99,7 @@ public class DataInitializer implements CommandLineRunner {
         permissions.add(createPermissionIfNotExists("BRANCH_DELETE", "Delete Branches", "删除分行", "BRANCH_MANAGEMENT"));
         
         // Audit Log Permissions
-        permissions.add(createPermissionIfNotExists("AUDIT_VIEW", "View Audit Logs", "查看审计日志", "AUDIT_MANAGEMENT"));
+        permissions.add(createPermissionIfNotExists("AUDIT_LOG_VIEW", "View Audit Logs", "查看审计日志", "AUDIT_MANAGEMENT"));
         
         // System Settings Permissions
         permissions.add(createPermissionIfNotExists("SETTINGS_VIEW", "View Settings", "查看设置", "SYSTEM_SETTINGS"));
