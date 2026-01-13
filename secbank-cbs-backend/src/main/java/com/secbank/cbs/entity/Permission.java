@@ -38,6 +38,10 @@ public class Permission {
     @Column(name = "description_cn", length = 500)
     private String descriptionCn;
 
+    @Column(length = 20)
+    @Builder.Default
+    private String status = "ACTIVE";
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
