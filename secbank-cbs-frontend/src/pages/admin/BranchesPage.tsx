@@ -43,7 +43,7 @@ export function BranchesPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
-  const [formData, setFormData] = useState<Partial<CreateBranchRequest>>({});
+  const [formData, setFormData] = useState<Partial<CreateBranchRequest & UpdateBranchRequest>>({});
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {

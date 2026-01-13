@@ -3,17 +3,17 @@ export interface ApiResponse<T> {
   success: boolean;
   message: string;
   data: T;
-  timestamp: string;
+  timestamp?: string;
 }
 
 export interface PageResponse<T> {
   content: T[];
   totalElements: number;
   totalPages: number;
-  size: number;
-  number: number;
-  first: boolean;
-  last: boolean;
+  size?: number;
+  number?: number;
+  first?: boolean;
+  last?: boolean;
 }
 
 // Auth Types / 认证类型
@@ -27,12 +27,13 @@ export interface LoginResponse {
   refreshToken: string;
   tokenType: string;
   expiresIn: number;
-  userId: number;
-  username: string;
-  fullName: string;
-  email: string;
-  branchId: number | null;
-  mustChangePassword: boolean;
+  userId?: number;
+  username?: string;
+  fullName?: string;
+  email?: string;
+  branchId?: number | null;
+  mustChangePassword?: boolean;
+  user?: User;
 }
 
 export interface User {
@@ -47,7 +48,7 @@ export interface User {
   branchName: string | null;
   status: 'ACTIVE' | 'INACTIVE' | 'LOCKED';
   lastLoginAt: string | null;
-  mustChangePassword: boolean;
+  mustChangePassword?: boolean;
   roles: Role[];
   createdAt: string;
   updatedAt: string;
@@ -174,7 +175,7 @@ export interface AuditLog {
   action: string;
   module: string;
   entityType: string | null;
-  entityId: number | null;
+  entityId: number | string | null;
   oldValue: string | null;
   newValue: string | null;
   ipAddress: string | null;

@@ -46,7 +46,7 @@ export function UsersPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isResetPasswordDialogOpen, setIsResetPasswordDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [formData, setFormData] = useState<Partial<CreateUserRequest>>({});
+  const [formData, setFormData] = useState<Partial<CreateUserRequest & UpdateUserRequest>>({});
   const [newPassword, setNewPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
 

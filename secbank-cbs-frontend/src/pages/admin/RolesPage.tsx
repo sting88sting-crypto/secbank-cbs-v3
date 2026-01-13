@@ -43,7 +43,7 @@ export function RolesPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
-  const [formData, setFormData] = useState<Partial<CreateRoleRequest>>({});
+  const [formData, setFormData] = useState<Partial<CreateRoleRequest & UpdateRoleRequest>>({});
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {

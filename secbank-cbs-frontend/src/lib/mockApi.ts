@@ -204,16 +204,16 @@ let mockUsers: User[] = [
 ];
 
 const mockAuditLogs: AuditLog[] = [
-  { id: 1, userId: 1, username: 'admin', action: 'LOGIN', module: 'AUTH', entityType: 'User', entityId: '1', description: 'User logged in successfully', ipAddress: '192.168.1.100', createdAt: '2024-01-15T08:30:00Z' },
-  { id: 2, userId: 1, username: 'admin', action: 'CREATE', module: 'USER', entityType: 'User', entityId: '5', description: 'Created new user: agarcia', ipAddress: '192.168.1.100', createdAt: '2024-01-15T08:35:00Z' },
-  { id: 3, userId: 1, username: 'admin', action: 'UPDATE', module: 'ROLE', entityType: 'Role', entityId: '2', description: 'Updated role permissions', ipAddress: '192.168.1.100', createdAt: '2024-01-15T08:40:00Z' },
-  { id: 4, userId: 2, username: 'jdelacruz', action: 'LOGIN', module: 'AUTH', entityType: 'User', entityId: '2', description: 'User logged in successfully', ipAddress: '192.168.1.101', createdAt: '2024-01-14T09:15:00Z' },
-  { id: 5, userId: 2, username: 'jdelacruz', action: 'VIEW', module: 'BRANCH', entityType: 'Branch', entityId: '1', description: 'Viewed branch details', ipAddress: '192.168.1.101', createdAt: '2024-01-14T09:20:00Z' },
-  { id: 6, userId: 3, username: 'msantos', action: 'LOGIN', module: 'AUTH', entityType: 'User', entityId: '3', description: 'User logged in successfully', ipAddress: '192.168.1.102', createdAt: '2024-01-13T10:00:00Z' },
+  { id: 1, userId: 1, username: 'admin', action: 'LOGIN', module: 'AUTH', entityType: 'User', entityId: '1', description: 'User logged in successfully', oldValue: null, newValue: null, ipAddress: '192.168.1.100', createdAt: '2024-01-15T08:30:00Z' },
+  { id: 2, userId: 1, username: 'admin', action: 'CREATE', module: 'USER', entityType: 'User', entityId: '5', description: 'Created new user: agarcia', oldValue: null, newValue: null, ipAddress: '192.168.1.100', createdAt: '2024-01-15T08:35:00Z' },
+  { id: 3, userId: 1, username: 'admin', action: 'UPDATE', module: 'ROLE', entityType: 'Role', entityId: '2', description: 'Updated role permissions', oldValue: null, newValue: null, ipAddress: '192.168.1.100', createdAt: '2024-01-15T08:40:00Z' },
+  { id: 4, userId: 2, username: 'jdelacruz', action: 'LOGIN', module: 'AUTH', entityType: 'User', entityId: '2', description: 'User logged in successfully', oldValue: null, newValue: null, ipAddress: '192.168.1.101', createdAt: '2024-01-14T09:15:00Z' },
+  { id: 5, userId: 2, username: 'jdelacruz', action: 'VIEW', module: 'BRANCH', entityType: 'Branch', entityId: '1', description: 'Viewed branch details', oldValue: null, newValue: null, ipAddress: '192.168.1.101', createdAt: '2024-01-14T09:20:00Z' },
+  { id: 6, userId: 3, username: 'msantos', action: 'LOGIN', module: 'AUTH', entityType: 'User', entityId: '3', description: 'User logged in successfully', oldValue: null, newValue: null, ipAddress: '192.168.1.102', createdAt: '2024-01-13T10:00:00Z' },
   { id: 7, userId: 1, username: 'admin', action: 'UPDATE', module: 'USER', entityType: 'User', entityId: '5', description: 'Updated user status to INACTIVE', oldValue: '{"status":"ACTIVE"}', newValue: '{"status":"INACTIVE"}', ipAddress: '192.168.1.100', createdAt: '2024-01-13T11:00:00Z' },
-  { id: 8, userId: 1, username: 'admin', action: 'CREATE', module: 'BRANCH', entityType: 'Branch', entityId: '3', description: 'Created new branch: Cebu Branch', ipAddress: '192.168.1.100', createdAt: '2024-01-12T14:00:00Z' },
-  { id: 9, userId: 4, username: 'preyes', action: 'LOGIN', module: 'AUTH', entityType: 'User', entityId: '4', description: 'User logged in successfully', ipAddress: '192.168.1.103', createdAt: '2024-01-12T11:30:00Z' },
-  { id: 10, userId: 1, username: 'admin', action: 'LOGOUT', module: 'AUTH', entityType: 'User', entityId: '1', description: 'User logged out', ipAddress: '192.168.1.100', createdAt: '2024-01-15T17:00:00Z' },
+  { id: 8, userId: 1, username: 'admin', action: 'CREATE', module: 'BRANCH', entityType: 'Branch', entityId: '3', description: 'Created new branch: Cebu Branch', oldValue: null, newValue: null, ipAddress: '192.168.1.100', createdAt: '2024-01-12T14:00:00Z' },
+  { id: 9, userId: 4, username: 'preyes', action: 'LOGIN', module: 'AUTH', entityType: 'User', entityId: '4', description: 'User logged in successfully', oldValue: null, newValue: null, ipAddress: '192.168.1.103', createdAt: '2024-01-12T11:30:00Z' },
+  { id: 10, userId: 1, username: 'admin', action: 'LOGOUT', module: 'AUTH', entityType: 'User', entityId: '1', description: 'User logged out', oldValue: null, newValue: null, ipAddress: '192.168.1.100', createdAt: '2024-01-15T17:00:00Z' },
 ];
 
 // Mock API Functions / 模拟API函数
@@ -266,6 +266,7 @@ export const mockApi = {
       branchName: mockBranches.find(b => b.id === data.branchId)?.branchName || '',
       roles: mockRoles.filter(r => data.roleIds?.includes(r.id)),
       status: 'ACTIVE',
+      lastLoginAt: null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
