@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { auditLogApi } from '@/lib/api';
 import { AuditLog } from '@/types';
@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from '@/hooks/useToast';
 import { formatDate } from '@/lib/utils';
-import { Search, Loader2, Eye, Filter } from 'lucide-react';
+import { Search, Loader2, Eye } from 'lucide-react';
 
 export function AuditLogsPage() {
   const { t, language } = useLanguage();
@@ -41,9 +41,9 @@ export function AuditLogsPage() {
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   
-  // Filters
-  const [filterModule, setFilterModule] = useState<string>('');
-  const [filterAction, setFilterAction] = useState<string>('');
+  // Filters - use 'all' instead of empty string to avoid Select issues
+  const [filterModule, setFilterModule] = useState<string>('all');
+  const [filterAction, setFilterAction] = useState<string>('all');
   const [filterStartDate, setFilterStartDate] = useState<string>('');
   const [filterEndDate, setFilterEndDate] = useState<string>('');
 
@@ -56,12 +56,18 @@ export function AuditLogsPage() {
     setLoading(true);
     try {
       const response = await auditLogApi.getAll(0, 100);
-      setAuditLogs(response.data.content);
+      if (response.success && response.data?.content) {
+        setAuditLogs(response.data.content);
+      } else {
+        setAuditLogs([]);
+      }
     } catch (error) {
+      console.error('Failed to load audit logs:', error);
       toast({
         title: language === 'en' ? 'Failed to load audit logs' : '加载审计日志失败',
         variant: 'destructive',
       });
+      setAuditLogs([]);
     } finally {
       setLoading(false);
     }
@@ -73,8 +79,12 @@ export function AuditLogsPage() {
         auditLogApi.getModules(),
         auditLogApi.getActions(),
       ]);
-      setModules(modulesRes.data);
-      setActions(actionsRes.data);
+      if (modulesRes.success && modulesRes.data) {
+        setModules(modulesRes.data);
+      }
+      if (actionsRes.success && actionsRes.data) {
+        setActions(actionsRes.data);
+      }
     } catch (error) {
       console.error('Failed to load filters:', error);
     }
@@ -84,14 +94,19 @@ export function AuditLogsPage() {
     setLoading(true);
     try {
       const params: any = { page: 0, size: 100 };
-      if (filterModule) params.module = filterModule;
-      if (filterAction) params.action = filterAction;
+      if (filterModule && filterModule !== 'all') params.module = filterModule;
+      if (filterAction && filterAction !== 'all') params.action = filterAction;
       if (filterStartDate) params.startDate = new Date(filterStartDate).toISOString();
       if (filterEndDate) params.endDate = new Date(filterEndDate).toISOString();
       
       const response = await auditLogApi.search(params);
-      setAuditLogs(response.data.content);
+      if (response.success && response.data?.content) {
+        setAuditLogs(response.data.content);
+      } else {
+        setAuditLogs([]);
+      }
     } catch (error) {
+      console.error('Search failed:', error);
       toast({
         title: language === 'en' ? 'Search failed' : '搜索失败',
         variant: 'destructive',
@@ -102,15 +117,15 @@ export function AuditLogsPage() {
   };
 
   const handleReset = () => {
-    setFilterModule('');
-    setFilterAction('');
+    setFilterModule('all');
+    setFilterAction('all');
     setFilterStartDate('');
     setFilterEndDate('');
     loadData();
   };
 
   const getActionColor = (action: string) => {
-    switch (action.toUpperCase()) {
+    switch (action?.toUpperCase()) {
       case 'CREATE':
         return 'bg-green-100 text-green-800';
       case 'UPDATE':
@@ -153,7 +168,7 @@ export function AuditLogsPage() {
                   <SelectValue placeholder={language === 'en' ? 'All modules' : '所有模块'} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">{language === 'en' ? 'All modules' : '所有模块'}</SelectItem>
+                  <SelectItem value="all">{language === 'en' ? 'All modules' : '所有模块'}</SelectItem>
                   {modules.map((module) => (
                     <SelectItem key={module} value={module}>{module}</SelectItem>
                   ))}
@@ -167,7 +182,7 @@ export function AuditLogsPage() {
                   <SelectValue placeholder={language === 'en' ? 'All actions' : '所有操作'} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">{language === 'en' ? 'All actions' : '所有操作'}</SelectItem>
+                  <SelectItem value="all">{language === 'en' ? 'All actions' : '所有操作'}</SelectItem>
                   {actions.map((action) => (
                     <SelectItem key={action} value={action}>{action}</SelectItem>
                   ))}
