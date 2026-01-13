@@ -83,6 +83,9 @@ public class DataInitializer implements CommandLineRunner {
         permissions.add(createPermissionIfNotExists("USER_UPDATE", "Update Users", "更新用户", "USER_MANAGEMENT"));
         permissions.add(createPermissionIfNotExists("USER_DELETE", "Delete Users", "删除用户", "USER_MANAGEMENT"));
         
+        // Permission Management Permissions
+        permissions.add(createPermissionIfNotExists("PERMISSION_VIEW", "View Permissions", "查看权限", "PERMISSION_MANAGEMENT"));
+        
         // Role Management Permissions
         permissions.add(createPermissionIfNotExists("ROLE_VIEW", "View Roles", "查看角色", "ROLE_MANAGEMENT"));
         permissions.add(createPermissionIfNotExists("ROLE_CREATE", "Create Roles", "创建角色", "ROLE_MANAGEMENT"));
