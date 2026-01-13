@@ -1,0 +1,100 @@
+erDiagram
+    BRANCHES {
+        bigint id PK
+        varchar branch_code UK
+        varchar branch_name
+        varchar branch_name_cn
+        varchar address
+        varchar city
+        varchar province
+        varchar postal_code
+        varchar phone
+        varchar email
+        varchar manager_name
+        boolean is_head_office
+        varchar status
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    PERMISSIONS {
+        bigint id PK
+        varchar permission_code UK
+        varchar permission_name
+        varchar permission_name_cn
+        varchar module
+        varchar description
+        varchar description_cn
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    ROLES {
+        bigint id PK
+        varchar role_code UK
+        varchar role_name
+        varchar role_name_cn
+        varchar description
+        varchar description_cn
+        boolean is_system_role
+        varchar status
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    ROLE_PERMISSIONS {
+        bigint id PK
+        bigint role_id FK
+        bigint permission_id FK
+        timestamp created_at
+    }
+
+    USERS {
+        bigint id PK
+        varchar username UK
+        varchar password_hash
+        varchar email UK
+        varchar full_name
+        varchar full_name_cn
+        varchar phone
+        varchar employee_id
+        bigint branch_id FK
+        varchar status
+        int failed_login_attempts
+        timestamp last_login_at
+        varchar last_login_ip
+        timestamp password_changed_at
+        boolean must_change_password
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    USER_ROLES {
+        bigint id PK
+        bigint user_id FK
+        bigint role_id FK
+        timestamp created_at
+    }
+
+    AUDIT_LOGS {
+        bigint id PK
+        bigint user_id FK
+        varchar username
+        varchar action
+        varchar module
+        varchar entity_type
+        bigint entity_id
+        text old_value
+        text new_value
+        varchar ip_address
+        varchar user_agent
+        varchar description
+        timestamp created_at
+    }
+
+    BRANCHES ||--o{ USERS : "has"
+    ROLES ||--o{ ROLE_PERMISSIONS : "has"
+    PERMISSIONS ||--o{ ROLE_PERMISSIONS : "assigned to"
+    USERS ||--o{ USER_ROLES : "has"
+    ROLES ||--o{ USER_ROLES : "assigned to"
+    USERS ||--o{ AUDIT_LOGS : "creates"

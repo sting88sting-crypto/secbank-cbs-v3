@@ -1,0 +1,25 @@
+# SecBank CBS V2 Production Docker Compose Override
+# SecBank CBS V2 生产环境 Docker Compose 覆盖配置
+#
+# Usage / 使用方法:
+#   docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+version: '3.8'
+
+services:
+  postgres:
+    # Production: No port exposure / 生产环境：不暴露端口
+    ports: []
+    
+  backend:
+    # Production: Only expose internally / 生产环境：仅内部暴露
+    ports: []
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      # Override with production secrets / 使用生产环境密钥覆盖
+      JWT_SECRET: ${JWT_SECRET}
+      
+  frontend:
+    # Production: Expose on port 80 or 443 / 生产环境：暴露80或443端口
+    ports:
+      - "80:80"

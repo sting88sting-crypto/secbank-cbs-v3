@@ -1,0 +1,59 @@
+# SecBank CBS V2 Git Ignore
+
+# ==========================================
+# Environment files / 环境文件
+# ==========================================
+.env
+.env.local
+.env.*.local
+
+# ==========================================
+# Backend / 后端
+# ==========================================
+secbank-cbs-backend/target/
+secbank-cbs-backend/*.jar
+secbank-cbs-backend/.mvn/
+secbank-cbs-backend/mvnw
+secbank-cbs-backend/mvnw.cmd
+
+# ==========================================
+# Frontend / 前端
+# ==========================================
+secbank-cbs-frontend/node_modules/
+secbank-cbs-frontend/dist/
+secbank-cbs-frontend/.pnpm-store/
+
+# ==========================================
+# IDE / 开发工具
+# ==========================================
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+
+# ==========================================
+# OS / 操作系统
+# ==========================================
+.DS_Store
+Thumbs.db
+
+# ==========================================
+# Logs / 日志
+# ==========================================
+*.log
+logs/
+
+# ==========================================
+# Database backups / 数据库备份
+# ==========================================
+*.sql
+!database/*.sql
+backup_*.sql
+backup_*.sql.gz
+
+# ==========================================
+# Docker / Docker
+# ==========================================
+docker-compose.override.yml

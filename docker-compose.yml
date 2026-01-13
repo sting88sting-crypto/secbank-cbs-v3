@@ -1,0 +1,87 @@
+# SecBank CBS V2 Docker Compose Configuration
+# SecBank CBS V2 Docker Compose 配置
+# 
+# Usage / 使用方法:
+#   Development / 开发环境: docker-compose up -d
+#   Production / 生产环境:  docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database / PostgreSQL 数据库
+  postgres:
+    image: postgres:15-alpine
+    container_name: secbank-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-secbank_cbs}
+      POSTGRES_USER: ${POSTGRES_USER:-secbank}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secbank123}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-secbank} -d ${POSTGRES_DB:-secbank_cbs}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - secbank-network
+
+  # Backend Service / 后端服务
+  backend:
+    build:
+      context: ./secbank-cbs-backend
+      dockerfile: Dockerfile
+    container_name: secbank-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-secbank_cbs}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-secbank}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-secbank123}
+      JWT_SECRET: ${JWT_SECRET:-your-256-bit-secret-key-here-change-in-production}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - secbank-network
+
+  # Frontend Service / 前端服务
+  frontend:
+    build:
+      context: ./secbank-cbs-frontend
+      dockerfile: Dockerfile
+    container_name: secbank-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - secbank-network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  secbank-network:
+    driver: bridge

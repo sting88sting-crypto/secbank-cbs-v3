@@ -1,0 +1,55 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: secbank-cbs
+  
+  datasource:
+    url: jdbc:postgresql://localhost:5432/secbank_cbs
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+  
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+
+# JWT Configuration
+app:
+  jwt:
+    secret: ${JWT_SECRET:SecBankCBSV2SecretKeyForJWTTokenGenerationMustBeAtLeast256BitsLong}
+    expiration-ms: 86400000      # 24 hours
+    refresh-expiration-ms: 604800000  # 7 days
+
+# Logging Configuration
+logging:
+  level:
+    root: INFO
+    com.secbank.cbs: DEBUG
+    org.springframework.security: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# OpenAPI Configuration
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+    tagsSorter: alpha
+  info:
+    title: SecBank CBS API
+    description: SecBank Core Banking System API Documentation / SecBank核心银行系统API文档
+    version: 2.0.0
