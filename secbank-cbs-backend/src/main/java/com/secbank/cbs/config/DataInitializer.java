@@ -108,6 +108,22 @@ public class DataInitializer implements CommandLineRunner {
         // Dashboard Permissions
         permissions.add(createPermissionIfNotExists("DASHBOARD_VIEW", "View Dashboard", "查看仪表板", "DASHBOARD"));
         
+        // CASA Module - Customer Management Permissions
+        permissions.add(createPermissionIfNotExists("CASA_CUSTOMER_VIEW", "View Customers", "查看客户", "CASA_CUSTOMER"));
+        permissions.add(createPermissionIfNotExists("CASA_CUSTOMER_CREATE", "Create Customers", "创建客户", "CASA_CUSTOMER"));
+        permissions.add(createPermissionIfNotExists("CASA_CUSTOMER_UPDATE", "Update Customers", "更新客户", "CASA_CUSTOMER"));
+        
+        // CASA Module - Account Type Management Permissions
+        permissions.add(createPermissionIfNotExists("CASA_TYPE_VIEW", "View Account Types", "查看账户类型", "CASA_ACCOUNT_TYPE"));
+        permissions.add(createPermissionIfNotExists("CASA_TYPE_CREATE", "Create Account Types", "创建账户类型", "CASA_ACCOUNT_TYPE"));
+        permissions.add(createPermissionIfNotExists("CASA_TYPE_UPDATE", "Update Account Types", "更新账户类型", "CASA_ACCOUNT_TYPE"));
+        
+        // CASA Module - Account Management Permissions
+        permissions.add(createPermissionIfNotExists("CASA_ACCOUNT_VIEW", "View Accounts", "查看账户", "CASA_ACCOUNT"));
+        permissions.add(createPermissionIfNotExists("CASA_ACCOUNT_CREATE", "Open Accounts", "开立账户", "CASA_ACCOUNT"));
+        permissions.add(createPermissionIfNotExists("CASA_ACCOUNT_UPDATE", "Update Accounts", "更新账户", "CASA_ACCOUNT"));
+        permissions.add(createPermissionIfNotExists("CASA_ACCOUNT_CLOSE", "Close Accounts", "关闭账户", "CASA_ACCOUNT"));
+        
         return permissions;
     }
 

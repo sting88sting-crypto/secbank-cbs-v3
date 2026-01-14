@@ -15,10 +15,14 @@ import {
   CreditCard,
   ChevronDown,
   ChevronRight,
+  Settings,
+  PiggyBank,
 } from 'lucide-react';
 
 interface NavItem {
   titleKey: string;
+  titleEn?: string;
+  titleCn?: string;
   icon: React.ElementType;
   href?: string;
   children?: NavItem[];
@@ -45,16 +49,17 @@ const navItems: NavItem[] = [
     titleKey: 'nav.casa',
     icon: Wallet,
     children: [
-      { titleKey: 'Customers / 客户', icon: Users, href: '/casa/customers' },
-      { titleKey: 'Accounts / 账户', icon: CreditCard, href: '/casa/accounts' },
+      { titleKey: 'casa.customers', titleEn: 'Customers', titleCn: '客户', icon: Users, href: '/casa/customers' },
+      { titleKey: 'casa.accountTypes', titleEn: 'Account Types', titleCn: '账户类型', icon: Settings, href: '/casa/account-types' },
+      { titleKey: 'casa.accounts', titleEn: 'Accounts', titleCn: '账户', icon: PiggyBank, href: '/casa/accounts' },
     ],
   },
   {
     titleKey: 'nav.accounting',
     icon: Calculator,
     children: [
-      { titleKey: 'Chart of Accounts / 会计科目', icon: FileText, href: '/accounting/coa' },
-      { titleKey: 'Journal Entries / 日记账', icon: Receipt, href: '/accounting/journal' },
+      { titleKey: 'accounting.coa', titleEn: 'Chart of Accounts', titleCn: '会计科目', icon: FileText, href: '/accounting/coa' },
+      { titleKey: 'accounting.journal', titleEn: 'Journal Entries', titleCn: '日记账', icon: Receipt, href: '/accounting/journal' },
     ],
   },
   {
@@ -71,8 +76,8 @@ const navItems: NavItem[] = [
 
 export function Sidebar() {
   const location = useLocation();
-  const { t } = useLanguage();
-  const [expandedItems, setExpandedItems] = useState<string[]>(['nav.administration']);
+  const { t, language } = useLanguage();
+  const [expandedItems, setExpandedItems] = useState<string[]>(['nav.administration', 'nav.casa']);
 
   const toggleExpanded = (key: string) => {
     setExpandedItems((prev) =>
@@ -83,6 +88,13 @@ export function Sidebar() {
   const isActive = (href?: string) => {
     if (!href) return false;
     return location.pathname === href || location.pathname.startsWith(href + '/');
+  };
+
+  const getTitle = (item: NavItem) => {
+    if (item.titleEn && item.titleCn) {
+      return language === 'en' ? item.titleEn : item.titleCn;
+    }
+    return t(item.titleKey);
   };
 
   const renderNavItem = (item: NavItem, level = 0) => {
@@ -103,7 +115,7 @@ export function Sidebar() {
           >
             <div className="flex items-center gap-3">
               <Icon className="h-5 w-5" />
-              <span>{t(item.titleKey)}</span>
+              <span>{getTitle(item)}</span>
             </div>
             {isExpanded ? (
               <ChevronDown className="h-4 w-4" />
@@ -132,7 +144,7 @@ export function Sidebar() {
         )}
       >
         <Icon className="h-5 w-5" />
-        <span>{item.titleKey.includes('/') ? item.titleKey : t(item.titleKey)}</span>
+        <span>{getTitle(item)}</span>
       </Link>
     );
   };

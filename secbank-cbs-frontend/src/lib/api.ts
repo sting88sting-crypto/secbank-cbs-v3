@@ -1,6 +1,6 @@
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import { mockApi } from './mockApi';
-import { ApiResponse, LoginRequest, LoginResponse, PageResponse, User, Role, Permission, Branch, AuditLog, CreateUserRequest, UpdateUserRequest, CreateRoleRequest, UpdateRoleRequest, CreateBranchRequest, UpdateBranchRequest } from '@/types';
+import { ApiResponse, LoginRequest, LoginResponse, PageResponse, User, Role, Permission, Branch, AuditLog, CreateUserRequest, UpdateUserRequest, CreateRoleRequest, UpdateRoleRequest, CreateBranchRequest, UpdateBranchRequest, Customer, CreateCustomerRequest, UpdateCustomerRequest, CustomerStats, CustomerType, CustomerStatus, AccountType, CreateAccountTypeRequest, AccountTypeStats, AccountCategory, AccountTypeStatus, Account, OpenAccountRequest, UpdateAccountRequest, AccountStats, BranchAccountStats, AccountStatus } from '@/types';
 
 // Use mock API for development, real API for production
 // 开发环境使用模拟API，生产环境使用真实API
@@ -348,3 +348,201 @@ export const auditLogApi = {
 };
 
 export default api;
+
+
+// ==================== CASA MODULE APIs ====================
+
+// Customer API / 客户API
+export const customerApi = {
+  getAll: async (params: {
+    keyword?: string;
+    type?: CustomerType;
+    status?: CustomerStatus;
+    branchId?: number;
+    page?: number;
+    size?: number;
+  } = {}): Promise<ApiResponse<PageResponse<Customer>>> => {
+    const response = await api.get('/customers', { params });
+    return response.data;
+  },
+  
+  getById: async (id: number): Promise<ApiResponse<Customer>> => {
+    const response = await api.get(`/customers/${id}`);
+    return response.data;
+  },
+  
+  getByNumber: async (customerNumber: string): Promise<ApiResponse<Customer>> => {
+    const response = await api.get(`/customers/number/${customerNumber}`);
+    return response.data;
+  },
+  
+  search: async (keyword: string, page = 0, size = 20): Promise<ApiResponse<PageResponse<Customer>>> => {
+    const response = await api.get('/customers/search', { params: { keyword, page, size } });
+    return response.data;
+  },
+  
+  create: async (data: CreateCustomerRequest): Promise<ApiResponse<Customer>> => {
+    const response = await api.post('/customers', data);
+    return response.data;
+  },
+  
+  update: async (id: number, data: UpdateCustomerRequest): Promise<ApiResponse<Customer>> => {
+    const response = await api.put(`/customers/${id}`, data);
+    return response.data;
+  },
+  
+  updateStatus: async (id: number, status: CustomerStatus): Promise<ApiResponse<Customer>> => {
+    const response = await api.put(`/customers/${id}/status`, null, { params: { status } });
+    return response.data;
+  },
+  
+  verifyKyc: async (id: number): Promise<ApiResponse<Customer>> => {
+    const response = await api.post(`/customers/${id}/verify-kyc`);
+    return response.data;
+  },
+  
+  getByBranch: async (branchId: number, page = 0, size = 20): Promise<ApiResponse<PageResponse<Customer>>> => {
+    const response = await api.get(`/customers/branch/${branchId}`, { params: { page, size } });
+    return response.data;
+  },
+  
+  getStats: async (): Promise<ApiResponse<CustomerStats>> => {
+    const response = await api.get('/customers/stats');
+    return response.data;
+  },
+};
+
+// Account Type API / 账户类型API
+export const accountTypeApi = {
+  getAll: async (params: {
+    keyword?: string;
+    category?: AccountCategory;
+    status?: AccountTypeStatus;
+    page?: number;
+    size?: number;
+  } = {}): Promise<ApiResponse<PageResponse<AccountType>>> => {
+    const response = await api.get('/account-types', { params });
+    return response.data;
+  },
+  
+  getActive: async (): Promise<ApiResponse<AccountType[]>> => {
+    const response = await api.get('/account-types/active');
+    return response.data;
+  },
+  
+  getByCategory: async (category: AccountCategory): Promise<ApiResponse<AccountType[]>> => {
+    const response = await api.get(`/account-types/category/${category}`);
+    return response.data;
+  },
+  
+  getById: async (id: number): Promise<ApiResponse<AccountType>> => {
+    const response = await api.get(`/account-types/${id}`);
+    return response.data;
+  },
+  
+  getByCode: async (typeCode: string): Promise<ApiResponse<AccountType>> => {
+    const response = await api.get(`/account-types/code/${typeCode}`);
+    return response.data;
+  },
+  
+  create: async (data: CreateAccountTypeRequest): Promise<ApiResponse<AccountType>> => {
+    const response = await api.post('/account-types', data);
+    return response.data;
+  },
+  
+  update: async (id: number, data: CreateAccountTypeRequest): Promise<ApiResponse<AccountType>> => {
+    const response = await api.put(`/account-types/${id}`, data);
+    return response.data;
+  },
+  
+  updateStatus: async (id: number, status: AccountTypeStatus): Promise<ApiResponse<AccountType>> => {
+    const response = await api.put(`/account-types/${id}/status`, null, { params: { status } });
+    return response.data;
+  },
+  
+  getStats: async (): Promise<ApiResponse<AccountTypeStats>> => {
+    const response = await api.get('/account-types/stats');
+    return response.data;
+  },
+};
+
+// Account API / 账户API
+export const accountApi = {
+  getAll: async (params: {
+    keyword?: string;
+    status?: AccountStatus;
+    branchId?: number;
+    accountTypeId?: number;
+    customerId?: number;
+    page?: number;
+    size?: number;
+  } = {}): Promise<ApiResponse<PageResponse<Account>>> => {
+    const response = await api.get('/accounts', { params });
+    return response.data;
+  },
+  
+  getById: async (id: number): Promise<ApiResponse<Account>> => {
+    const response = await api.get(`/accounts/${id}`);
+    return response.data;
+  },
+  
+  getByNumber: async (accountNumber: string): Promise<ApiResponse<Account>> => {
+    const response = await api.get(`/accounts/number/${accountNumber}`);
+    return response.data;
+  },
+  
+  search: async (keyword: string, page = 0, size = 20): Promise<ApiResponse<PageResponse<Account>>> => {
+    const response = await api.get('/accounts/search', { params: { keyword, page, size } });
+    return response.data;
+  },
+  
+  getByCustomer: async (customerId: number): Promise<ApiResponse<Account[]>> => {
+    const response = await api.get(`/accounts/customer/${customerId}`);
+    return response.data;
+  },
+  
+  getByBranch: async (branchId: number, page = 0, size = 20): Promise<ApiResponse<PageResponse<Account>>> => {
+    const response = await api.get(`/accounts/branch/${branchId}`, { params: { page, size } });
+    return response.data;
+  },
+  
+  open: async (data: OpenAccountRequest): Promise<ApiResponse<Account>> => {
+    const response = await api.post('/accounts/open', data);
+    return response.data;
+  },
+  
+  update: async (id: number, data: UpdateAccountRequest): Promise<ApiResponse<Account>> => {
+    const response = await api.put(`/accounts/${id}`, data);
+    return response.data;
+  },
+  
+  updateStatus: async (id: number, status: AccountStatus, reason?: string): Promise<ApiResponse<Account>> => {
+    const response = await api.put(`/accounts/${id}/status`, null, { params: { status, reason } });
+    return response.data;
+  },
+  
+  freeze: async (id: number, reason: string): Promise<ApiResponse<Account>> => {
+    const response = await api.post(`/accounts/${id}/freeze`, null, { params: { reason } });
+    return response.data;
+  },
+  
+  unfreeze: async (id: number): Promise<ApiResponse<Account>> => {
+    const response = await api.post(`/accounts/${id}/unfreeze`);
+    return response.data;
+  },
+  
+  close: async (id: number, reason: string): Promise<ApiResponse<Account>> => {
+    const response = await api.post(`/accounts/${id}/close`, null, { params: { reason } });
+    return response.data;
+  },
+  
+  getStats: async (): Promise<ApiResponse<AccountStats>> => {
+    const response = await api.get('/accounts/stats');
+    return response.data;
+  },
+  
+  getBranchStats: async (branchId: number): Promise<ApiResponse<BranchAccountStats>> => {
+    const response = await api.get(`/accounts/stats/branch/${branchId}`);
+    return response.data;
+  },
+};

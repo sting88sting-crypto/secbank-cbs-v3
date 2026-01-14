@@ -10,6 +10,7 @@ import { RolesPage } from '@/pages/admin/RolesPage';
 import { PermissionsPage } from '@/pages/admin/PermissionsPage';
 import { BranchesPage } from '@/pages/admin/BranchesPage';
 import { AuditLogsPage } from '@/pages/admin/AuditLogsPage';
+import { CustomersPage, AccountTypesPage, AccountsPage } from '@/pages/casa';
 
 function App() {
   return (
@@ -31,8 +32,12 @@ function App() {
               <Route path="/admin/branches" element={<BranchesPage />} />
               <Route path="/admin/audit-logs" element={<AuditLogsPage />} />
               
+              {/* CASA Module */}
+              <Route path="/casa/customers" element={<CustomersPage />} />
+              <Route path="/casa/account-types" element={<AccountTypesPage />} />
+              <Route path="/casa/accounts" element={<AccountsPage />} />
+              
               {/* Placeholder routes for other modules */}
-              <Route path="/casa/*" element={<ComingSoon module="CASA" />} />
               <Route path="/accounting/*" element={<ComingSoon module="Accounting" />} />
               <Route path="/tellering/*" element={<ComingSoon module="Tellering" />} />
               <Route path="/nrps/*" element={<ComingSoon module="NRPS" />} />
