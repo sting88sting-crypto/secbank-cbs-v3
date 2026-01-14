@@ -570,6 +570,7 @@ export interface OpenAccountRequest {
   accountTypeId: number;
   branchId: number;
   initialDeposit: number;
+  currency?: string;
   accountName?: string;
   accountNameCn?: string;
   isJointAccount?: boolean;
