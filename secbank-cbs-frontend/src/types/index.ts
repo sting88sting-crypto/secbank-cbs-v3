@@ -199,7 +199,7 @@ export interface SelectOption {
 
 // Customer Types / 客户类型
 export type CustomerType = 'INDIVIDUAL' | 'CORPORATE';
-export type CustomerStatus = 'ACTIVE' | 'INACTIVE' | 'BLOCKED' | 'DECEASED';
+export type CustomerStatus = 'ACTIVE' | 'INACTIVE' | 'BLOCKED' | 'DECEASED' | 'PENDING_KYC';
 export type Gender = 'MALE' | 'FEMALE' | 'OTHER';
 export type IdType = 'PASSPORT' | 'NATIONAL_ID' | 'DRIVERS_LICENSE' | 'SSS' | 'GSIS' | 'TIN' | 'COMPANY_ID' | 'OTHER';
 export type RiskRating = 'LOW' | 'MEDIUM' | 'HIGH';
