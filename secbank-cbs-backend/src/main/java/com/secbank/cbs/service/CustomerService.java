@@ -27,7 +27,23 @@ public class CustomerService {
         return customerRepository.findAll(pageable);
     }
     
+    public Page<Customer> findByType(CustomerType type, Pageable pageable) {
+        if (type == null) {
+            return customerRepository.findAll(pageable);
+        }
+        return customerRepository.findByCustomerType(type, pageable);
+    }
+    
     public Page<Customer> findByFilters(String keyword, CustomerType type, CustomerStatus status, Long branchId, Pageable pageable) {
+        // If no filters, just return by type or all
+        if ((keyword == null || keyword.isEmpty()) && status == null && branchId == null) {
+            if (type == null) {
+                return customerRepository.findAll(pageable);
+            }
+            return customerRepository.findByCustomerType(type, pageable);
+        }
+        
+        // Use the complex query only when needed
         return customerRepository.findByFilters(keyword, type, status, branchId, pageable);
     }
     

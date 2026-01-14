@@ -43,12 +43,12 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
     Page<Customer> searchCustomers(@Param("keyword") String keyword, Pageable pageable);
     
     @Query("SELECT c FROM Customer c WHERE " +
-           "(:keyword IS NULL OR :keyword = '' OR " +
-           "LOWER(c.firstName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(c.lastName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(c.companyName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(c.customerNumber) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(c.email) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND " +
+           "(:keyword IS NULL OR " +
+           "LOWER(COALESCE(c.firstName, '')) LIKE LOWER(CONCAT('%', COALESCE(:keyword, ''), '%')) OR " +
+           "LOWER(COALESCE(c.lastName, '')) LIKE LOWER(CONCAT('%', COALESCE(:keyword, ''), '%')) OR " +
+           "LOWER(COALESCE(c.companyName, '')) LIKE LOWER(CONCAT('%', COALESCE(:keyword, ''), '%')) OR " +
+           "LOWER(COALESCE(c.customerNumber, '')) LIKE LOWER(CONCAT('%', COALESCE(:keyword, ''), '%')) OR " +
+           "LOWER(COALESCE(c.email, '')) LIKE LOWER(CONCAT('%', COALESCE(:keyword, ''), '%'))) AND " +
            "(:type IS NULL OR c.customerType = :type) AND " +
            "(:status IS NULL OR c.status = :status) AND " +
            "(:branchId IS NULL OR c.branch.id = :branchId)")
@@ -58,6 +58,12 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
             @Param("status") CustomerStatus status,
             @Param("branchId") Long branchId,
             Pageable pageable);
+    
+    // Simple findAll with pagination by type
+    Page<Customer> findByCustomerType(CustomerType customerType, Pageable pageable);
+    
+    // Simple findAll with pagination by type and status
+    Page<Customer> findByCustomerTypeAndStatus(CustomerType customerType, CustomerStatus status, Pageable pageable);
     
     long countByStatus(CustomerStatus status);
     

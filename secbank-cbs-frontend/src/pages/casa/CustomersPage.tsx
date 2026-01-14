@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { customerApi, branchApi } from '@/lib/api';
-import { Customer, Branch, CustomerType, CustomerStatus, Gender, IdType, CreateCustomerRequest } from '@/types';
+import { Customer, Branch, CreateCustomerRequest, CustomerType, CustomerStatus } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Table,
   TableBody,
@@ -31,17 +30,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/useToast';
-import { Plus, Search, Loader2, Users, Building2, Eye, Pencil } from 'lucide-react';
+import { Plus, Search, Loader2, Users, Building2, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export function CustomersPage() {
-  const { language, getBilingual } = useLanguage();
+  const { getBilingual } = useLanguage();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,6 +45,10 @@ export function CustomersPage() {
   const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
+  
+  // Stats
+  const [individualCount, setIndividualCount] = useState(0);
+  const [corporateCount, setCorporateCount] = useState(0);
   
   // Dialog states
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -67,24 +65,37 @@ export function CustomersPage() {
 
   useEffect(() => {
     loadBranches();
+    loadStats();
   }, []);
 
   useEffect(() => {
-    loadData();
+    loadCustomers();
   }, [currentPage, customerType]);
 
   const loadBranches = async () => {
     try {
-      const response = await branchApi.getActive();
+      const response = await branchApi.getAll(0, 100);
       if (response.success && response.data) {
-        setBranches(response.data);
+        setBranches(response.data.content || []);
       }
     } catch (err) {
       console.error('Failed to load branches:', err);
     }
   };
 
-  const loadData = async () => {
+  const loadStats = async () => {
+    try {
+      const response = await customerApi.getStats();
+      if (response.success && response.data) {
+        setIndividualCount(response.data.individualCustomers || 0);
+        setCorporateCount(response.data.corporateCustomers || 0);
+      }
+    } catch (err) {
+      console.error('Failed to load stats:', err);
+    }
+  };
+
+  const loadCustomers = async () => {
     setLoading(true);
     setError(null);
     try {
@@ -112,29 +123,26 @@ export function CustomersPage() {
 
   const handleSearch = () => {
     setCurrentPage(0);
-    loadData();
+    loadCustomers();
   };
 
   const handleCreate = async () => {
     // Validate required fields
-    if (!formData.branchId) {
-      toast({ title: getBilingual('Please select a branch', '请选择分行'), variant: 'destructive' });
+    if (!formData.customerType) {
+      toast({ title: getBilingual('Please select customer type', '请选择客户类型'), variant: 'destructive' });
       return;
     }
+    
     if (formData.customerType === 'INDIVIDUAL') {
       if (!formData.firstName || !formData.lastName) {
-        toast({ title: getBilingual('Please enter first name and last name', '请输入名和姓'), variant: 'destructive' });
+        toast({ title: getBilingual('Please fill in name', '请填写姓名'), variant: 'destructive' });
         return;
       }
     } else {
       if (!formData.companyName) {
-        toast({ title: getBilingual('Please enter company name', '请输入公司名称'), variant: 'destructive' });
+        toast({ title: getBilingual('Please fill in company name', '请填写公司名称'), variant: 'destructive' });
         return;
       }
-    }
-    if (!formData.idNumber) {
-      toast({ title: getBilingual('Please enter ID number', '请输入证件号码'), variant: 'destructive' });
-      return;
     }
 
     setSubmitting(true);
@@ -144,7 +152,8 @@ export function CustomersPage() {
         toast({ title: getBilingual('Customer created successfully', '客户创建成功') });
         setIsCreateDialogOpen(false);
         resetForm();
-        loadData();
+        loadCustomers();
+        loadStats();
       } else {
         toast({ title: response.message || getBilingual('Failed to create customer', '创建客户失败'), variant: 'destructive' });
       }
@@ -162,7 +171,7 @@ export function CustomersPage() {
 
   const resetForm = () => {
     setFormData({
-      customerType: 'INDIVIDUAL',
+      customerType: customerType,
       gender: 'MALE',
       idType: 'NATIONAL_ID',
     });
@@ -211,7 +220,7 @@ export function CustomersPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{customerType === 'INDIVIDUAL' ? totalElements : '-'}</div>
+            <div className="text-2xl font-bold">{individualCount}</div>
           </CardContent>
         </Card>
         <Card>
@@ -220,37 +229,126 @@ export function CustomersPage() {
             <Building2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{customerType === 'CORPORATE' ? totalElements : '-'}</div>
+            <div className="text-2xl font-bold">{corporateCount}</div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Tabs and Search */}
+      {/* Tabs */}
       <Tabs value={customerType} onValueChange={(v) => { setCustomerType(v as CustomerType); setCurrentPage(0); }}>
-        <div className="flex justify-between items-center mb-4">
-          <TabsList>
-            <TabsTrigger value="INDIVIDUAL">{getBilingual('Individual', '个人')}</TabsTrigger>
-            <TabsTrigger value="CORPORATE">{getBilingual('Corporate', '企业')}</TabsTrigger>
-          </TabsList>
-          <div className="flex gap-2">
-            <Input
-              placeholder={getBilingual('Search by name, ID, email...', '按姓名、证件号、邮箱搜索...')}
-              value={searchKeyword}
-              onChange={(e) => setSearchKeyword(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              className="w-64"
-            />
-            <Button onClick={handleSearch} variant="outline">
-              <Search className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+        <TabsList>
+          <TabsTrigger value="INDIVIDUAL">{getBilingual('Individual', '个人')}</TabsTrigger>
+          <TabsTrigger value="CORPORATE">{getBilingual('Corporate', '企业')}</TabsTrigger>
+        </TabsList>
 
-        <TabsContent value="INDIVIDUAL">
-          {renderTable()}
-        </TabsContent>
-        <TabsContent value="CORPORATE">
-          {renderTable()}
+        <TabsContent value={customerType} className="space-y-4">
+          {/* Search */}
+          <Card>
+            <CardContent className="pt-4">
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <Input
+                    placeholder={getBilingual('Search by name, ID, phone...', '按姓名、ID、电话搜索...')}
+                    value={searchKeyword}
+                    onChange={(e) => setSearchKeyword(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                  />
+                </div>
+                <Button onClick={handleSearch}>
+                  <Search className="h-4 w-4 mr-2" />
+                  {getBilingual('Search', '搜索')}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Table */}
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          ) : error ? (
+            <div className="text-center py-8 text-red-500">{error}</div>
+          ) : (
+            <Card>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{getBilingual('Customer No.', '客户号')}</TableHead>
+                    <TableHead>{getBilingual('Name', '姓名')}</TableHead>
+                    <TableHead>{getBilingual('Contact', '联系方式')}</TableHead>
+                    <TableHead>{getBilingual('Branch', '分行')}</TableHead>
+                    <TableHead>{getBilingual('Status', '状态')}</TableHead>
+                    <TableHead>{getBilingual('Actions', '操作')}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {customers.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        {getBilingual('No customers found', '未找到客户')}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    customers.map((customer) => (
+                      <TableRow key={customer.id}>
+                        <TableCell className="font-mono">{customer.customerNumber}</TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{customer.displayName}</div>
+                            {customer.displayNameCn && <div className="text-sm text-muted-foreground">{customer.displayNameCn}</div>}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            {customer.email && <div>{customer.email}</div>}
+                            {customer.mobile && <div>{customer.mobile}</div>}
+                          </div>
+                        </TableCell>
+                        <TableCell>{customer.branchName || '-'}</TableCell>
+                        <TableCell>{getStatusBadge(customer.status)}</TableCell>
+                        <TableCell>
+                          <Button variant="ghost" size="sm" onClick={() => openViewDialog(customer)}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+              
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between px-4 py-3 border-t">
+                  <div className="text-sm text-muted-foreground">
+                    {getBilingual(`Showing ${customers.length} of ${totalElements} results`, `显示 ${customers.length} / ${totalElements} 条结果`)}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
+                      disabled={currentPage === 0}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <span className="flex items-center px-2">
+                      {currentPage + 1} / {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))}
+                      disabled={currentPage >= totalPages - 1}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
 
@@ -258,19 +356,23 @@ export function CustomersPage() {
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{getBilingual('Create New Customer', '创建新客户')}</DialogTitle>
+            <DialogTitle>
+              {formData.customerType === 'INDIVIDUAL' 
+                ? getBilingual('Create Individual Customer', '创建个人客户')
+                : getBilingual('Create Corporate Customer', '创建企业客户')}
+            </DialogTitle>
             <DialogDescription>
-              {getBilingual('Fill in the customer information below', '请填写以下客户信息')}
+              {getBilingual('Fill in customer information', '填写客户信息')}
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="grid gap-4 py-4">
             {/* Customer Type */}
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">{getBilingual('Type', '类型')} *</Label>
+              <Label className="text-right">{getBilingual('Customer Type', '客户类型')} *</Label>
               <Select 
                 value={formData.customerType} 
-                onValueChange={(v) => setFormData({ ...formData, customerType: v as CustomerType })}
+                onValueChange={(v) => setFormData(prev => ({ ...prev, customerType: v as CustomerType }))}
               >
                 <SelectTrigger className="col-span-3">
                   <SelectValue />
@@ -278,26 +380,6 @@ export function CustomersPage() {
                 <SelectContent>
                   <SelectItem value="INDIVIDUAL">{getBilingual('Individual', '个人')}</SelectItem>
                   <SelectItem value="CORPORATE">{getBilingual('Corporate', '企业')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Branch */}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">{getBilingual('Branch', '分行')} *</Label>
-              <Select 
-                value={formData.branchId?.toString()} 
-                onValueChange={(v) => setFormData({ ...formData, branchId: parseInt(v) })}
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder={getBilingual('Select branch', '选择分行')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {branches.map((branch) => (
-                    <SelectItem key={branch.id} value={branch.id.toString()}>
-                      {getBilingual(branch.branchName, branch.branchNameCn)}
-                    </SelectItem>
-                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -310,7 +392,7 @@ export function CustomersPage() {
                   <Input
                     className="col-span-3"
                     value={formData.firstName || ''}
-                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                    onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -318,22 +400,14 @@ export function CustomersPage() {
                   <Input
                     className="col-span-3"
                     value={formData.lastName || ''}
-                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right">{getBilingual('Middle Name', '中间名')}</Label>
-                  <Input
-                    className="col-span-3"
-                    value={formData.middleName || ''}
-                    onChange={(e) => setFormData({ ...formData, middleName: e.target.value })}
+                    onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label className="text-right">{getBilingual('Gender', '性别')}</Label>
                   <Select 
-                    value={formData.gender} 
-                    onValueChange={(v) => setFormData({ ...formData, gender: v as Gender })}
+                    value={formData.gender || 'MALE'} 
+                    onValueChange={(v) => setFormData(prev => ({ ...prev, gender: v as 'MALE' | 'FEMALE' | 'OTHER' }))}
                   >
                     <SelectTrigger className="col-span-3">
                       <SelectValue />
@@ -351,7 +425,7 @@ export function CustomersPage() {
                     type="date"
                     className="col-span-3"
                     value={formData.dateOfBirth || ''}
-                    onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                    onChange={(e) => setFormData(prev => ({ ...prev, dateOfBirth: e.target.value }))}
                   />
                 </div>
               </>
@@ -365,55 +439,23 @@ export function CustomersPage() {
                   <Input
                     className="col-span-3"
                     value={formData.companyName || ''}
-                    onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                    onChange={(e) => setFormData(prev => ({ ...prev, companyName: e.target.value }))}
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right">{getBilingual('Company Name (CN)', '公司中文名')}</Label>
+                  <Label className="text-right">{getBilingual('Registration No.', '注册号')}</Label>
                   <Input
                     className="col-span-3"
-                    value={formData.companyNameCn || ''}
-                    onChange={(e) => setFormData({ ...formData, companyNameCn: e.target.value })}
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right">{getBilingual('Business Type', '业务类型')}</Label>
-                  <Input
-                    className="col-span-3"
-                    value={formData.businessType || ''}
-                    onChange={(e) => setFormData({ ...formData, businessType: e.target.value })}
+                    value={formData.registrationNumber || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, registrationNumber: e.target.value }))}
                   />
                 </div>
               </>
             )}
 
             {/* Common Fields */}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">{getBilingual('ID Type', '证件类型')} *</Label>
-              <Select 
-                value={formData.idType} 
-                onValueChange={(v) => setFormData({ ...formData, idType: v as IdType })}
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="NATIONAL_ID">{getBilingual('National ID', '身份证')}</SelectItem>
-                  <SelectItem value="PASSPORT">{getBilingual('Passport', '护照')}</SelectItem>
-                  <SelectItem value="DRIVERS_LICENSE">{getBilingual("Driver's License", '驾照')}</SelectItem>
-                  <SelectItem value="SSS">{getBilingual('SSS', '社保号')}</SelectItem>
-                  <SelectItem value="TIN">{getBilingual('TIN', '税号')}</SelectItem>
-                  <SelectItem value="BUSINESS_REGISTRATION">{getBilingual('Business Registration', '营业执照')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">{getBilingual('ID Number', '证件号码')} *</Label>
-              <Input
-                className="col-span-3"
-                value={formData.idNumber || ''}
-                onChange={(e) => setFormData({ ...formData, idNumber: e.target.value })}
-              />
+            <div className="border-t pt-4 mt-2">
+              <h4 className="font-medium mb-4">{getBilingual('Contact Information', '联系信息')}</h4>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right">{getBilingual('Email', '邮箱')}</Label>
@@ -421,7 +463,7 @@ export function CustomersPage() {
                 type="email"
                 className="col-span-3"
                 value={formData.email || ''}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -429,24 +471,36 @@ export function CustomersPage() {
               <Input
                 className="col-span-3"
                 value={formData.mobile || ''}
-                onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">{getBilingual('Phone', '电话')}</Label>
-              <Input
-                className="col-span-3"
-                value={formData.phone || ''}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                onChange={(e) => setFormData(prev => ({ ...prev, mobile: e.target.value }))}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right">{getBilingual('Address', '地址')}</Label>
-              <Textarea
+              <Input
                 className="col-span-3"
                 value={formData.address || ''}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
               />
+            </div>
+
+            {/* Branch */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">{getBilingual('Branch', '分行')}</Label>
+              <Select 
+                value={formData.branchId?.toString() || ''} 
+                onValueChange={(v) => setFormData(prev => ({ ...prev, branchId: parseInt(v) }))}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder={getBilingual('Select branch', '选择分行')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {branches.map((branch) => (
+                    <SelectItem key={branch.id} value={branch.id.toString()}>
+                      {branch.branchName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -473,7 +527,7 @@ export function CustomersPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-muted-foreground">{getBilingual('Customer Number', '客户号')}</Label>
-                  <p className="font-mono">{selectedCustomer.customerNumber}</p>
+                  <p className="font-medium">{selectedCustomer.customerNumber}</p>
                 </div>
                 <div>
                   <Label className="text-muted-foreground">{getBilingual('Status', '状态')}</Label>
@@ -481,11 +535,11 @@ export function CustomersPage() {
                 </div>
                 <div>
                   <Label className="text-muted-foreground">{getBilingual('Name', '姓名')}</Label>
-                  <p>{selectedCustomer.displayName}</p>
+                  <p className="font-medium">{selectedCustomer.displayName}</p>
                 </div>
                 <div>
                   <Label className="text-muted-foreground">{getBilingual('Type', '类型')}</Label>
-                  <p>{selectedCustomer.customerType}</p>
+                  <p>{selectedCustomer.customerType === 'INDIVIDUAL' ? getBilingual('Individual', '个人') : getBilingual('Corporate', '企业')}</p>
                 </div>
                 <div>
                   <Label className="text-muted-foreground">{getBilingual('Email', '邮箱')}</Label>
@@ -493,15 +547,11 @@ export function CustomersPage() {
                 </div>
                 <div>
                   <Label className="text-muted-foreground">{getBilingual('Mobile', '手机')}</Label>
-                  <p>{selectedCustomer.mobile || selectedCustomer.mobilePhone || '-'}</p>
+                  <p>{selectedCustomer.mobile || '-'}</p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">{getBilingual('ID Type', '证件类型')}</Label>
-                  <p>{selectedCustomer.idType}</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">{getBilingual('ID Number', '证件号码')}</Label>
-                  <p>{selectedCustomer.idNumber}</p>
+                  <Label className="text-muted-foreground">{getBilingual('Branch', '分行')}</Label>
+                  <p>{selectedCustomer.branchName || '-'}</p>
                 </div>
               </div>
             </div>
@@ -515,86 +565,6 @@ export function CustomersPage() {
       </Dialog>
     </div>
   );
-
-  function renderTable() {
-    if (loading) {
-      return (
-        <div className="flex justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
-      );
-    }
-
-    if (error) {
-      return <div className="text-center py-8 text-red-500">{error}</div>;
-    }
-
-    return (
-      <Card>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{getBilingual('Customer No.', '客户号')}</TableHead>
-              <TableHead>{getBilingual('Name', '姓名')}</TableHead>
-              <TableHead>{getBilingual('ID Number', '证件号')}</TableHead>
-              <TableHead>{getBilingual('Email', '邮箱')}</TableHead>
-              <TableHead>{getBilingual('Mobile', '手机')}</TableHead>
-              <TableHead>{getBilingual('Status', '状态')}</TableHead>
-              <TableHead>{getBilingual('Actions', '操作')}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {customers.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                  {getBilingual('No customers found', '未找到客户')}
-                </TableCell>
-              </TableRow>
-            ) : (
-              customers.map((customer) => (
-                <TableRow key={customer.id}>
-                  <TableCell className="font-mono">{customer.customerNumber}</TableCell>
-                  <TableCell>{customer.displayName}</TableCell>
-                  <TableCell>{customer.idNumber}</TableCell>
-                  <TableCell>{customer.email || '-'}</TableCell>
-                  <TableCell>{customer.mobile || customer.mobilePhone || '-'}</TableCell>
-                  <TableCell>{getStatusBadge(customer.status)}</TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="icon" onClick={() => openViewDialog(customer)}>
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-        
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex justify-center gap-2 p-4">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === 0}
-              onClick={() => setCurrentPage(currentPage - 1)}
-            >
-              {getBilingual('Previous', '上一页')}
-            </Button>
-            <span className="flex items-center px-4">
-              {currentPage + 1} / {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage >= totalPages - 1}
-              onClick={() => setCurrentPage(currentPage + 1)}
-            >
-              {getBilingual('Next', '下一页')}
-            </Button>
-          </div>
-        )}
-      </Card>
-    );
-  }
 }
+
+export default CustomersPage;

@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Table,
   TableBody,
@@ -32,10 +31,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from '@/hooks/useToast';
-import { Plus, Search, Loader2, Wallet, PiggyBank, Clock, Eye } from 'lucide-react';
+import { Plus, Search, Loader2, Wallet, PiggyBank, Clock, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export function AccountTypesPage() {
-  const { language, getBilingual } = useLanguage();
+  const { getBilingual } = useLanguage();
   const [accountTypes, setAccountTypes] = useState<AccountType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +42,7 @@ export function AccountTypesPage() {
   const [filterCategory, setFilterCategory] = useState<AccountCategory | ''>('');
   const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
   
   // Dialog states
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -55,6 +55,9 @@ export function AccountTypesPage() {
     category: 'SAVINGS',
     interestCalculation: 'DAILY_BALANCE',
     interestPostingFrequency: 'MONTHLY',
+    interestRate: 0,
+    minimumBalance: 0,
+    minimumOpeningBalance: 0,
   });
 
   useEffect(() => {
@@ -74,6 +77,7 @@ export function AccountTypesPage() {
       if (response.success && response.data) {
         setAccountTypes(response.data.content || []);
         setTotalPages(response.data.totalPages || 0);
+        setTotalElements(response.data.totalElements || 0);
       } else {
         setAccountTypes([]);
       }
@@ -126,6 +130,9 @@ export function AccountTypesPage() {
       category: 'SAVINGS',
       interestCalculation: 'DAILY_BALANCE',
       interestPostingFrequency: 'MONTHLY',
+      interestRate: 0,
+      minimumBalance: 0,
+      minimumOpeningBalance: 0,
     });
   };
 
@@ -139,22 +146,13 @@ export function AccountTypesPage() {
     setIsViewDialogOpen(true);
   };
 
-  const getCategoryIcon = (category: AccountCategory) => {
-    switch (category) {
-      case 'SAVINGS': return <PiggyBank className="h-4 w-4" />;
-      case 'CURRENT': return <Wallet className="h-4 w-4" />;
-      case 'TIME_DEPOSIT': return <Clock className="h-4 w-4" />;
-      default: return <Wallet className="h-4 w-4" />;
-    }
-  };
-
   const getCategoryBadge = (category: AccountCategory) => {
     const colors: Record<AccountCategory, string> = {
       SAVINGS: 'bg-green-100 text-green-800',
       CURRENT: 'bg-blue-100 text-blue-800',
       TIME_DEPOSIT: 'bg-purple-100 text-purple-800',
     };
-    return <Badge className={colors[category]}>{category}</Badge>;
+    return <Badge className={colors[category] || 'bg-gray-100 text-gray-800'}>{category}</Badge>;
   };
 
   const getStatusBadge = (status: AccountTypeStatus) => {
@@ -162,7 +160,17 @@ export function AccountTypesPage() {
       ACTIVE: 'bg-green-100 text-green-800',
       INACTIVE: 'bg-gray-100 text-gray-800',
     };
-    return <Badge className={colors[status]}>{status}</Badge>;
+    return <Badge className={colors[status] || 'bg-gray-100 text-gray-800'}>{status}</Badge>;
+  };
+
+  const formatCurrency = (amount: number | undefined | null) => {
+    if (amount === undefined || amount === null) return '₱0.00';
+    return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(amount);
+  };
+
+  const formatPercent = (rate: number | undefined | null) => {
+    if (rate === undefined || rate === null) return '0.00%';
+    return `${rate.toFixed(2)}%`;
   };
 
   return (
@@ -228,7 +236,7 @@ export function AccountTypesPage() {
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               />
             </div>
-            <Select value={filterCategory} onValueChange={(v) => setFilterCategory(v as AccountCategory | '')}>
+            <Select value={filterCategory} onValueChange={(v) => { setFilterCategory(v as AccountCategory | ''); setCurrentPage(0); }}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder={getBilingual('Category', '类别')} />
               </SelectTrigger>
@@ -279,21 +287,13 @@ export function AccountTypesPage() {
                 accountTypes.map((type) => (
                   <TableRow key={type.id}>
                     <TableCell className="font-mono">{type.typeCode}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {getCategoryIcon(type.category)}
-                        <div>
-                          <div>{type.typeName}</div>
-                          {type.typeNameCn && <div className="text-sm text-muted-foreground">{type.typeNameCn}</div>}
-                        </div>
-                      </div>
-                    </TableCell>
+                    <TableCell>{type.typeName}</TableCell>
                     <TableCell>{getCategoryBadge(type.category)}</TableCell>
-                    <TableCell>{type.interestRate ? `${type.interestRate}%` : '-'}</TableCell>
-                    <TableCell>{type.minimumBalance?.toLocaleString() || '-'}</TableCell>
+                    <TableCell>{formatPercent(type.interestRate)}</TableCell>
+                    <TableCell>{formatCurrency(type.minimumBalance)}</TableCell>
                     <TableCell>{getStatusBadge(type.status)}</TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="icon" onClick={() => openViewDialog(type)}>
+                      <Button variant="ghost" size="sm" onClick={() => openViewDialog(type)}>
                         <Eye className="h-4 w-4" />
                       </Button>
                     </TableCell>
@@ -305,26 +305,31 @@ export function AccountTypesPage() {
           
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex justify-center gap-2 p-4">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={currentPage === 0}
-                onClick={() => setCurrentPage(currentPage - 1)}
-              >
-                {getBilingual('Previous', '上一页')}
-              </Button>
-              <span className="flex items-center px-4">
-                {currentPage + 1} / {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={currentPage >= totalPages - 1}
-                onClick={() => setCurrentPage(currentPage + 1)}
-              >
-                {getBilingual('Next', '下一页')}
-              </Button>
+            <div className="flex items-center justify-between px-4 py-3 border-t">
+              <div className="text-sm text-muted-foreground">
+                {getBilingual(`Showing ${accountTypes.length} of ${totalElements} results`, `显示 ${accountTypes.length} / ${totalElements} 条结果`)}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
+                  disabled={currentPage === 0}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="flex items-center px-2">
+                  {currentPage + 1} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))}
+                  disabled={currentPage >= totalPages - 1}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           )}
         </Card>
@@ -336,10 +341,10 @@ export function AccountTypesPage() {
           <DialogHeader>
             <DialogTitle>{getBilingual('Create Account Type', '创建账户类型')}</DialogTitle>
             <DialogDescription>
-              {getBilingual('Fill in the account type information below', '请填写以下账户类型信息')}
+              {getBilingual('Configure the account type settings', '配置账户类型设置')}
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="grid gap-4 py-4">
             {/* Basic Info */}
             <div className="grid grid-cols-4 items-center gap-4">
@@ -348,32 +353,23 @@ export function AccountTypesPage() {
                 className="col-span-3"
                 placeholder="e.g., SAV001"
                 value={formData.typeCode || ''}
-                onChange={(e) => setFormData({ ...formData, typeCode: e.target.value.toUpperCase() })}
+                onChange={(e) => setFormData(prev => ({ ...prev, typeCode: e.target.value }))}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">{getBilingual('Name', '名称')} *</Label>
+              <Label className="text-right">{getBilingual('Type Name', '类型名称')} *</Label>
               <Input
                 className="col-span-3"
                 placeholder="e.g., Regular Savings"
                 value={formData.typeName || ''}
-                onChange={(e) => setFormData({ ...formData, typeName: e.target.value })}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">{getBilingual('Name (CN)', '中文名称')}</Label>
-              <Input
-                className="col-span-3"
-                placeholder="e.g., 普通储蓄"
-                value={formData.typeNameCn || ''}
-                onChange={(e) => setFormData({ ...formData, typeNameCn: e.target.value })}
+                onChange={(e) => setFormData(prev => ({ ...prev, typeName: e.target.value }))}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right">{getBilingual('Category', '类别')} *</Label>
               <Select 
                 value={formData.category} 
-                onValueChange={(v) => setFormData({ ...formData, category: v as AccountCategory })}
+                onValueChange={(v) => setFormData(prev => ({ ...prev, category: v as AccountCategory }))}
               >
                 <SelectTrigger className="col-span-3">
                   <SelectValue />
@@ -385,17 +381,9 @@ export function AccountTypesPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">{getBilingual('Description', '描述')}</Label>
-              <Textarea
-                className="col-span-3"
-                value={formData.description || ''}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              />
-            </div>
 
             {/* Interest Settings */}
-            <div className="col-span-4 border-t pt-4 mt-2">
+            <div className="border-t pt-4 mt-2">
               <h4 className="font-medium mb-4">{getBilingual('Interest Settings', '利息设置')}</h4>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -403,17 +391,17 @@ export function AccountTypesPage() {
               <Input
                 type="number"
                 step="0.01"
+                min="0"
                 className="col-span-3"
-                placeholder="e.g., 2.5"
-                value={formData.interestRate || ''}
-                onChange={(e) => setFormData({ ...formData, interestRate: parseFloat(e.target.value) || undefined })}
+                value={formData.interestRate || 0}
+                onChange={(e) => setFormData(prev => ({ ...prev, interestRate: parseFloat(e.target.value) || 0 }))}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">{getBilingual('Calculation', '计算方式')}</Label>
+              <Label className="text-right">{getBilingual('Calculation Method', '计算方式')}</Label>
               <Select 
                 value={formData.interestCalculation} 
-                onValueChange={(v) => setFormData({ ...formData, interestCalculation: v as InterestCalculation })}
+                onValueChange={(v) => setFormData(prev => ({ ...prev, interestCalculation: v as InterestCalculation }))}
               >
                 <SelectTrigger className="col-span-3">
                   <SelectValue />
@@ -429,7 +417,7 @@ export function AccountTypesPage() {
               <Label className="text-right">{getBilingual('Posting Frequency', '计息频率')}</Label>
               <Select 
                 value={formData.interestPostingFrequency} 
-                onValueChange={(v) => setFormData({ ...formData, interestPostingFrequency: v as PostingFrequency })}
+                onValueChange={(v) => setFormData(prev => ({ ...prev, interestPostingFrequency: v as PostingFrequency }))}
               >
                 <SelectTrigger className="col-span-3">
                   <SelectValue />
@@ -438,35 +426,35 @@ export function AccountTypesPage() {
                   <SelectItem value="DAILY">{getBilingual('Daily', '每日')}</SelectItem>
                   <SelectItem value="MONTHLY">{getBilingual('Monthly', '每月')}</SelectItem>
                   <SelectItem value="QUARTERLY">{getBilingual('Quarterly', '每季')}</SelectItem>
-                  <SelectItem value="SEMI_ANNUALLY">{getBilingual('Semi-Annually', '半年')}</SelectItem>
                   <SelectItem value="ANNUALLY">{getBilingual('Annually', '每年')}</SelectItem>
-                  <SelectItem value="AT_MATURITY">{getBilingual('At Maturity', '到期')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             {/* Balance Settings */}
-            <div className="col-span-4 border-t pt-4 mt-2">
+            <div className="border-t pt-4 mt-2">
               <h4 className="font-medium mb-4">{getBilingual('Balance Settings', '余额设置')}</h4>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">{getBilingual('Min Opening', '最低开户金额')}</Label>
+              <Label className="text-right">{getBilingual('Min Opening Balance', '最低开户金额')}</Label>
               <Input
                 type="number"
+                step="0.01"
+                min="0"
                 className="col-span-3"
-                placeholder="e.g., 500"
-                value={formData.minimumOpeningBalance || ''}
-                onChange={(e) => setFormData({ ...formData, minimumOpeningBalance: parseFloat(e.target.value) || undefined })}
+                value={formData.minimumOpeningBalance || 0}
+                onChange={(e) => setFormData(prev => ({ ...prev, minimumOpeningBalance: parseFloat(e.target.value) || 0 }))}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right">{getBilingual('Min Balance', '最低余额')}</Label>
               <Input
                 type="number"
+                step="0.01"
+                min="0"
                 className="col-span-3"
-                placeholder="e.g., 100"
-                value={formData.minimumBalance || ''}
-                onChange={(e) => setFormData({ ...formData, minimumBalance: parseFloat(e.target.value) || undefined })}
+                value={formData.minimumBalance || 0}
+                onChange={(e) => setFormData(prev => ({ ...prev, minimumBalance: parseFloat(e.target.value) || 0 }))}
               />
             </div>
           </div>
@@ -493,49 +481,30 @@ export function AccountTypesPage() {
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-muted-foreground">{getBilingual('Code', '代码')}</Label>
-                  <p className="font-mono">{selectedType.typeCode}</p>
+                  <Label className="text-muted-foreground">{getBilingual('Type Code', '类型代码')}</Label>
+                  <p className="font-medium">{selectedType.typeCode}</p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">{getBilingual('Status', '状态')}</Label>
-                  <p>{getStatusBadge(selectedType.status)}</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">{getBilingual('Name', '名称')}</Label>
-                  <p>{selectedType.typeName}</p>
-                  {selectedType.typeNameCn && <p className="text-sm text-muted-foreground">{selectedType.typeNameCn}</p>}
+                  <Label className="text-muted-foreground">{getBilingual('Type Name', '类型名称')}</Label>
+                  <p className="font-medium">{selectedType.typeName}</p>
                 </div>
                 <div>
                   <Label className="text-muted-foreground">{getBilingual('Category', '类别')}</Label>
                   <p>{getCategoryBadge(selectedType.category)}</p>
                 </div>
                 <div>
+                  <Label className="text-muted-foreground">{getBilingual('Status', '状态')}</Label>
+                  <p>{getStatusBadge(selectedType.status)}</p>
+                </div>
+                <div>
                   <Label className="text-muted-foreground">{getBilingual('Interest Rate', '利率')}</Label>
-                  <p>{selectedType.interestRate ? `${selectedType.interestRate}%` : '-'}</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">{getBilingual('Calculation', '计算方式')}</Label>
-                  <p>{selectedType.interestCalculation || '-'}</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">{getBilingual('Posting Frequency', '计息频率')}</Label>
-                  <p>{selectedType.interestPostingFrequency || '-'}</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">{getBilingual('Min Opening', '最低开户金额')}</Label>
-                  <p>{selectedType.minimumOpeningBalance?.toLocaleString() || '-'}</p>
+                  <p className="font-medium">{formatPercent(selectedType.interestRate)}</p>
                 </div>
                 <div>
                   <Label className="text-muted-foreground">{getBilingual('Min Balance', '最低余额')}</Label>
-                  <p>{selectedType.minimumBalance?.toLocaleString() || '-'}</p>
+                  <p className="font-medium">{formatCurrency(selectedType.minimumBalance)}</p>
                 </div>
               </div>
-              {selectedType.description && (
-                <div>
-                  <Label className="text-muted-foreground">{getBilingual('Description', '描述')}</Label>
-                  <p>{selectedType.description}</p>
-                </div>
-              )}
             </div>
           )}
           <DialogFooter>
@@ -548,3 +517,5 @@ export function AccountTypesPage() {
     </div>
   );
 }
+
+export default AccountTypesPage;
