@@ -128,6 +128,8 @@ export interface Branch {
   branchCode: string;
   branchName: string;
   branchNameCn: string | null;
+  name: string;
+  nameCn: string | null;
   address: string | null;
   city: string | null;
   province: string | null;
@@ -226,11 +228,14 @@ export interface Customer {
   
   // Contact
   email: string | null;
+  phone: string | null;
+  mobile: string | null;
   mobilePhone: string | null;
   homePhone: string | null;
   workPhone: string | null;
   
   // Address
+  address: string | null;
   addressLine1: string | null;
   addressLine2: string | null;
   city: string | null;
@@ -289,14 +294,18 @@ export interface CreateCustomerRequest {
   registrationNumber?: string;
   dateOfIncorporation?: string;
   industry?: string;
+  businessType?: string;
   
   // Contact
   email?: string;
+  phone?: string;
+  mobile?: string;
   mobilePhone?: string;
   homePhone?: string;
   workPhone?: string;
   
   // Address
+  address?: string;
   addressLine1?: string;
   addressLine2?: string;
   city?: string;
@@ -337,14 +346,18 @@ export interface UpdateCustomerRequest {
   registrationNumber?: string;
   dateOfIncorporation?: string;
   industry?: string;
+  businessType?: string;
   
   // Contact
   email?: string;
+  phone?: string;
+  mobile?: string;
   mobilePhone?: string;
   homePhone?: string;
   workPhone?: string;
   
   // Address
+  address?: string;
   addressLine1?: string;
   addressLine2?: string;
   city?: string;
@@ -366,11 +379,11 @@ export interface UpdateCustomerRequest {
 }
 
 export interface CustomerStats {
-  totalActive: number;
-  totalInactive: number;
-  totalBlocked: number;
-  totalIndividual: number;
-  totalCorporate: number;
+  totalCustomers: number;
+  individualCustomers: number;
+  corporateCustomers: number;
+  activeCustomers: number;
+  kycVerifiedCustomers: number;
 }
 
 // Account Type Types / 账户类型
